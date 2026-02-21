@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>ChronoSync — Schedule Planner v2.5</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface2: #1a1a26;
+      --border: rgba(255,255,255,0.07);
+      --accent: #7c6bff;
+      --accent2: #ff6b9d;
+      --accent3: #6bffda;
+      --text: #e8e8f0;
+      --text-muted: #6b6b80;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      --card-shadow: 0 4px 24px rgba(0,0,0,0.5);
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* BG ambient */
+    body::before {
+      content:'';
+      position:fixed;
+      top:-20%;left:-10%;
+      width:60%;height:60%;
+      background: radial-gradient(ellipse, rgba(124,107,255,0.08) 0%, transparent 70%);
+      pointer-events:none;
+    }
+    body::after {
+      content:'';
+      position:fixed;
+      bottom:-20%;right:-10%;
+      width:50%;height:50%;
+      background: radial-gradient(ellipse, rgba(255,107,157,0.06) 0%, transparent 70%);
+      pointer-events:none;
+    }
+
+    /* Layout */
+    .app { display:flex; height:100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      min-width:260px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display:flex;
+      flex-direction:column;
+      padding:24px 0;
+      position:relative;
+      z-index:10;
+    }
+
+    .logo {
+      padding:0 24px 28px;
+      border-bottom:1px solid var(--border);
+    }
+    .logo h1 {
+      font-family:'Playfair Display', serif;
+      font-size:22px;
+      font-weight:900;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      letter-spacing:-0.5px;
+    }
+    .logo p { font-size:11px; color:var(--text-muted); margin-top:2px; letter-spacing:1.5px; text-transform:uppercase; }
+
+    .nav {
+      padding:20px 12px;
+      flex:1;
+    }
+    .nav-section-title {
+      font-size:10px;
+      text-transform:uppercase;
+      letter-spacing:2px;
+      color:var(--text-muted);
+      padding:8px 12px 6px;
+    }
+    .nav-item {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:13.5px;
+      font-weight:500;
+      color:var(--text-muted);
+      transition:all 0.2s;
+      margin-bottom:2px;
+    }
+    .nav-item:hover { background:var(--surface2); color:var(--text); }
+    .nav-item.active { background: rgba(124,107,255,0.15); color:var(--accent); }
+    .nav-item .icon { font-size:16px; width:20px; text-align:center; }
+
+    .mini-calendar { padding:20px 16px; border-top:1px solid var(--border); }
+    .mini-cal-header {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:12px;
+    }
+    .mini-cal-header span { font-size:13px; font-weight:600; }
+    .mini-cal-nav { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:14px; padding:2px 6px; border-radius:4px; transition:all 0.2s; }
+    .mini-cal-nav:hover { background:var(--surface2); color:var(--text); }
+    .mini-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+    .mini-cal-day-label { text-align:center; font-size:10px; color:var(--text-muted); padding:2px 0; font-weight:600; }
+    .mini-cal-day {
+      text-align:center;
+      font-size:11px;
+      padding:5px 2px;
+      border-radius:6px;
+      cursor:pointer;
+      transition:all 0.2s;
+      color:var(--text-muted);
+    }
+    .mini-cal-day:hover { background:var(--surface2); color:var(--text); }
+    .mini-cal-day.today { background:var(--accent); color:#fff; font-weight:700; }
+    .mini-cal-day.selected { background:rgba(124,107,255,0.3); color:var(--accent); }
+    .mini-cal-day.other-month { opacity:0.3; }
+
+    .google-btn {
+      margin:16px;
+      padding:10px 16px;
+      background: linear-gradient(135deg, rgba(124,107,255,0.2), rgba(255,107,157,0.15));
+      border:1px solid rgba(124,107,255,0.3);
+      border-radius:10px;
+      color:var(--text);
+      cursor:pointer;
+      font-family:'DM Sans',sans-serif;
+      font-size:12.5px;
+      font-weight:500;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      transition:all 0.2s;
+    }
+    .google-btn:hover { border-color:var(--accent); background:rgba(124,107,255,0.25); }
+    .google-btn.connected { border-color:var(--success); background:rgba(74,222,128,0.1); color:var(--success); }
+    .google-btn .google-icon { font-size:16px; }
+
+    /* Main area */
+    .main {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+
+    /* Header */
+    .header {
+      padding:20px 32px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      background:var(--surface);
+    }
+    .header-left h2 { font-size:22px; font-weight:700; letter-spacing:-0.5px; }
+    .header-left p { font-size:13px; color:var(--text-muted); margin-top:2px; }
+    .header-actions { display:flex; gap:10px; align-items:center; }
+
+    .btn {
+      padding:8px 16px;
+      border-radius:8px;
+      cursor:pointer;
+      font-family:'DM Sans',sans-serif;
+      font-size:13px;
+      font-weight:500;
+      border:none;
+      transition:all 0.2s;
+    }
+    .btn-ghost { background:transparent; color:var(--text-muted); border:1px solid var(--border); }
+    .btn-ghost:hover { border-color:var(--accent); color:var(--accent); background:rgba(124,107,255,0.08); }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), #6055cc); color:#fff; }
+    .btn-primary:hover { opacity:0.9; transform:translateY(-1px); box-shadow:0 4px 20px rgba(124,107,255,0.4); }
+    .btn-danger { background: linear-gradient(135deg, var(--danger), #cc4444); color:#fff; }
+    .btn-sm { padding:5px 10px; font-size:12px; }
+
+    /* Views container */
+    .views { flex:1; overflow:hidden; position:relative; }
+    .view { display:none; height:100%; overflow-y:auto; padding:28px 32px; }
+    .view.active { display:block; }
+
+    /* Dashboard View */
+    .dashboard-grid {
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap:20px;
+    }
+
+    .card {
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:22px;
+      box-shadow: var(--card-shadow);
+    }
+    .card-header {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:16px;
+    }
+    .card-header h3 { font-size:14px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+
+    .stat-cards {
+      grid-column:1/-1;
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:16px;
+    }
+    .stat-card {
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:20px;
+      position:relative;
+      overflow:hidden;
+    }
+    .stat-card::before {
+      content:'';
+      position:absolute;
+      top:0;left:0;right:0;
+      height:2px;
+    }
+    .stat-card.purple::before { background:linear-gradient(90deg, var(--accent), transparent); }
+    .stat-card.pink::before { background:linear-gradient(90deg, var(--accent2), transparent); }
+    .stat-card.cyan::before { background:linear-gradient(90deg, var(--accent3), transparent); }
+    .stat-card.yellow::before { background:linear-gradient(90deg, var(--warning), transparent); }
+    .stat-num { font-size:32px; font-weight:700; font-family:'Playfair Display',serif; }
+    .stat-label { font-size:12px; color:var(--text-muted); margin-top:4px; }
+    .stat-sub { font-size:11px; color:var(--text-muted); margin-top:8px; }
+    .stat-sub span { color:var(--success); font-weight:600; }
+
+    /* Today's timeline */
+    .timeline { display:flex; flex-direction:column; gap:8px; max-height:320px; overflow-y:auto; }
+    .timeline-item {
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+      padding:12px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      transition:all 0.2s;
+      cursor:pointer;
+    }
+    .timeline-item:hover { background:var(--surface2); border-color:var(--accent); }
+    .timeline-dot {
+      width:10px;height:10px;
+      border-radius:50%;
+      margin-top:4px;
+      flex-shrink:0;
+    }
+    .timeline-time { font-family:'DM Mono',monospace; font-size:11px; color:var(--text-muted); min-width:50px; }
+    .timeline-title { font-size:13px; font-weight:500; }
+    .timeline-sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
+    .timeline-tag {
+      font-size:10px;
+      padding:2px 8px;
+      border-radius:20px;
+      font-weight:600;
+      margin-left:auto;
+      flex-shrink:0;
+      align-self:flex-start;
+    }
+
+    /* Upcoming card */
+    .upcoming-list { display:flex; flex-direction:column; gap:10px; max-height:280px; overflow-y:auto; }
+    .upcoming-item {
+      display:flex;
+      gap:14px;
+      align-items:center;
+      padding:12px;
+      border-radius:10px;
+      background:var(--surface2);
+    }
+    .upcoming-date {
+      text-align:center;
+      min-width:40px;
+    }
+    .upcoming-date .day { font-size:20px; font-weight:700; font-family:'Playfair Display',serif; }
+    .upcoming-date .mon { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+    .upcoming-info { flex:1; }
+    .upcoming-info .title { font-size:13px; font-weight:500; }
+    .upcoming-info .sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
+
+    /* Calendar View */
+    .calendar-header {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:20px;
+    }
+    .calendar-header h2 { font-size:20px; font-weight:700; }
+    .view-switcher { display:flex; gap:4px; background:var(--surface2); border-radius:8px; padding:3px; }
+    .view-switch-btn { padding:5px 12px; border-radius:6px; border:none; background:transparent; color:var(--text-muted); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; transition:all 0.2s; }
+    .view-switch-btn.active { background:var(--surface); color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,0.3); }
+
+    .cal-grid {
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:16px;
+      overflow:hidden;
+    }
+    .cal-weekdays {
+      display:grid;
+      grid-template-columns:repeat(7,1fr);
+      border-bottom:1px solid var(--border);
+    }
+    .cal-weekday {
+      padding:12px 8px;
+      text-align:center;
+      font-size:11px;
+      font-weight:600;
+      text-transform:uppercase;
+      letter-spacing:1.5px;
+      color:var(--text-muted);
+    }
+    .cal-days { display:grid; grid-template-columns:repeat(7,1fr); }
+    .cal-day {
+      min-height:100px;
+      border-right:1px solid var(--border);
+      border-bottom:1px solid var(--border);
+      padding:8px;
+      cursor:pointer;
+      transition:background 0.2s;
+      position:relative;
+    }
+    .cal-day:hover { background:var(--surface2); }
+    .cal-day.today { background:rgba(124,107,255,0.08); }
+    .cal-day.other-month .cal-day-num { opacity:0.3; }
+    .cal-day-num {
+      font-size:13px;
+      font-weight:600;
+      width:26px;height:26px;
+      display:flex;align-items:center;justify-content:center;
+      border-radius:50%;
+      margin-bottom:4px;
+    }
+    .cal-day.today .cal-day-num { background:var(--accent); color:#fff; }
+    .cal-event {
+      font-size:11px;
+      padding:2px 6px;
+      border-radius:4px;
+      margin-bottom:2px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-weight:500;
+      cursor:pointer;
+    }
+    .more-events { font-size:10px; color:var(--text-muted); padding:2px 4px; }
+
+    /* Week view */
+    .week-grid {
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:16px;
+      overflow:auto;
+      max-height: calc(100vh - 200px);
+    }
+    .week-header { display:grid; grid-template-columns:60px repeat(7,1fr); border-bottom:1px solid var(--border); position:sticky;top:0;background:var(--surface);z-index:5; }
+    .week-time-col { padding:10px; }
+    .week-day-col { padding:10px; text-align:center; border-left:1px solid var(--border); }
+    .week-day-col .wd-name { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+    .week-day-col .wd-num { font-size:20px; font-weight:700; }
+    .week-day-col.today-col .wd-num { color:var(--accent); }
+    .week-body { display:grid; grid-template-columns:60px repeat(7,1fr); }
+    .week-time-slots { display:flex; flex-direction:column; }
+    .week-time-label { height:60px; display:flex; align-items:flex-start; padding:4px 8px; font-size:10px; font-family:'DM Mono',monospace; color:var(--text-muted); border-bottom:1px solid var(--border); }
+    .week-day-slots { display:flex; flex-direction:column; border-left:1px solid var(--border); position:relative; }
+    .week-slot { height:60px; border-bottom:1px solid rgba(255,255,255,0.03); cursor:pointer; transition:background 0.1s; }
+    .week-slot:hover { background:rgba(124,107,255,0.05); }
+    .week-event {
+      position:absolute;
+      left:4px;right:4px;
+      border-radius:6px;
+      padding:4px 6px;
+      font-size:11px;
+      font-weight:500;
+      overflow:hidden;
+      cursor:pointer;
+      z-index:2;
+    }
+
+    /* Events List View */
+    .events-list { display:flex; flex-direction:column; gap:12px; }
+    .event-card {
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:18px 20px;
+      display:flex;
+      align-items:center;
+      gap:18px;
+      cursor:pointer;
+      transition:all 0.2s;
+    }
+    .event-card:hover { border-color:var(--accent); transform:translateY(-1px); box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+    .event-color-bar { width:4px; height:50px; border-radius:2px; flex-shrink:0; }
+    .event-card-date { text-align:center; min-width:48px; }
+    .event-card-date .day { font-size:24px; font-weight:700; font-family:'Playfair Display',serif; }
+    .event-card-date .mon { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); }
+    .event-card-info { flex:1; }
+    .event-card-title { font-size:15px; font-weight:600; }
+    .event-card-meta { font-size:12px; color:var(--text-muted); margin-top:4px; display:flex; gap:12px; }
+    .event-card-actions { display:flex; gap:8px; }
+
+    /* Modal */
+    .modal-overlay {
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.7);
+      backdrop-filter:blur(8px);
+      z-index:100;
+      display:none;
+      align-items:center;
+      justify-content:center;
+    }
+    .modal-overlay.open { display:flex; }
+    .modal {
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:20px;
+      padding:32px;
+      width:520px;
+      max-width:95vw;
+      box-shadow:0 20px 80px rgba(0,0,0,0.8);
+      animation: modalIn 0.25s ease;
+    }
+    @keyframes modalIn { from{opacity:0;transform:scale(0.95) translateY(10px)} to{opacity:1;transform:scale(1) translateY(0)} }
+    .modal h3 { font-size:18px; font-weight:700; margin-bottom:20px; }
+    .modal-close { position:absolute; top:20px; right:20px; background:var(--surface2); border:none; color:var(--text-muted); width:28px;height:28px; border-radius:50%; cursor:pointer; font-size:14px; }
+
+    .form-group { margin-bottom:16px; }
+    .form-group label { display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:6px; }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width:100%;
+      background:var(--surface2);
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:10px 12px;
+      color:var(--text);
+      font-family:'DM Sans',sans-serif;
+      font-size:13px;
+      outline:none;
+      transition:border-color 0.2s;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color:var(--accent); }
+    .form-group textarea { resize:vertical; min-height:80px; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+    .color-picker { display:flex; gap:8px; flex-wrap:wrap; }
+    .color-dot {
+      width:28px;height:28px;
+      border-radius:50%;
+      cursor:pointer;
+      transition:transform 0.2s;
+      border:2px solid transparent;
+    }
+    .color-dot:hover { transform:scale(1.2); }
+    .color-dot.selected { border-color:#fff; }
+
+    .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:24px; }
+
+    /* Share modal */
+    .share-link-box {
+      background:var(--surface2);
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:12px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-top:12px;
+    }
+    .share-link-box input { flex:1; background:none; border:none; color:var(--text); font-family:'DM Mono',monospace; font-size:12px; outline:none; }
+    .share-link-copy { padding:6px 12px; background:var(--accent); border:none; border-radius:6px; color:#fff; cursor:pointer; font-size:12px; font-weight:600; font-family:'DM Sans',sans-serif; }
+
+    /* AI Planner */
+    .ai-planner {
+      background: linear-gradient(135deg, rgba(124,107,255,0.1), rgba(255,107,157,0.08));
+      border:1px solid rgba(124,107,255,0.2);
+      border-radius:16px;
+      padding:24px;
+      margin-bottom:24px;
+    }
+    .ai-planner h3 { font-size:16px; font-weight:700; margin-bottom:8px; }
+    .ai-prompt { display:flex; gap:10px; margin-top:14px; }
+    .ai-prompt input { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; outline:none; transition:border-color 0.2s; }
+    .ai-prompt input:focus { border-color:var(--accent); }
+    .ai-prompt button { padding:12px 20px; background:linear-gradient(135deg, var(--accent), var(--accent2)); border:none; border-radius:10px; color:#fff; cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:600; font-size:13px; white-space:nowrap; }
+    .ai-suggestions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .ai-chip {
+      padding:5px 12px;
+      background:rgba(124,107,255,0.15);
+      border:1px solid rgba(124,107,255,0.2);
+      border-radius:20px;
+      font-size:12px;
+      cursor:pointer;
+      transition:all 0.2s;
+    }
+    .ai-chip:hover { background:rgba(124,107,255,0.3); border-color:var(--accent); }
+    .ai-response { margin-top:16px; padding:16px; background:var(--surface); border-radius:12px; font-size:13px; line-height:1.7; display:none; }
+    .ai-response.show { display:block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+
+    /* Toast */
+    .toast-container { position:fixed; bottom:24px; right:24px; z-index:200; display:flex; flex-direction:column; gap:8px; }
+    .toast {
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:12px 18px;
+      font-size:13px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      box-shadow:0 4px 20px rgba(0,0,0,0.4);
+      animation: toastIn 0.3s ease;
+    }
+    @keyframes toastIn { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
+    .toast.success { border-color:var(--success); }
+    .toast.error { border-color:var(--danger); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width:4px; height:4px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--surface2); border-radius:2px; }
+
+    /* Loading */
+    .loading { display:flex; align-items:center; gap:8px; color:var(--text-muted); font-size:13px; }
+    .spinner { width:16px;height:16px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    /* Event detail panel */
+    .detail-panel {
+      position:fixed;
+      right:0;top:0;bottom:0;
+      width:360px;
+      background:var(--surface);
+      border-left:1px solid var(--border);
+      z-index:50;
+      transform:translateX(100%);
+      transition:transform 0.3s ease;
+      display:flex;
+      flex-direction:column;
+    }
+    .detail-panel.open { transform:translateX(0); }
+    .detail-panel-header {
+      padding:20px 24px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .detail-panel-body { flex:1; overflow-y:auto; padding:24px; }
+    .detail-field { margin-bottom:18px; }
+    .detail-field label { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); display:block; margin-bottom:4px; }
+    .detail-field p { font-size:14px; }
+
+    /* Tag colors */
+    .tag-meeting { background:rgba(124,107,255,0.2); color:var(--accent); }
+    .tag-deadline { background:rgba(248,113,113,0.2); color:var(--danger); }
+    .tag-personal { background:rgba(107,255,218,0.2); color:var(--accent3); }
+    .tag-reminder { background:rgba(251,191,36,0.2); color:var(--warning); }
+    .tag-focus { background:rgba(255,107,157,0.2); color:var(--accent2); }
+
+    .event-c1 { background: #7c6bff; }
+    .event-c2 { background: #ff6b9d; }
+    .event-c3 { background: #6bffda; }
+    .event-c4 { background: #fbbf24; }
+    .event-c5 { background: #f87171; }
+    .event-c6 { background: #34d399; }
+
+    /* Google setup */
+    .setup-box {
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:32px;
+      max-width:600px;
+      margin:0 auto;
+    }
+    .setup-step { display:flex; gap:16px; margin-bottom:20px; }
+    .step-num { width:28px;height:28px; background:rgba(124,107,255,0.2); border-radius:50%; display:flex;align-items:center;justify-content:center; font-size:12px; font-weight:700; color:var(--accent); flex-shrink:0; }
+    .step-content h4 { font-size:14px; font-weight:600; margin-bottom:4px; }
+    .step-content p { font-size:13px; color:var(--text-muted); line-height:1.6; }
+    .step-content code { background:var(--surface2); padding:2px 6px; border-radius:4px; font-family:'DM Mono',monospace; font-size:12px; }
+    .config-input-row { display:flex; gap:10px; margin-top:12px; }
+
+    /* Empty state */
+    .empty-state { text-align:center; padding:48px 20px; color:var(--text-muted); }
+    .empty-state .es-icon { font-size:48px; margin-bottom:16px; opacity:0.5; }
+    .empty-state h3 { font-size:16px; font-weight:600; color:var(--text); margin-bottom:8px; }
+    .empty-state p { font-size:13px; }
+
+    @media (max-width: 768px) {
+      .sidebar { display:none; }
+      .stat-cards { grid-template-columns:1fr 1fr; }
+      .dashboard-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <h1>ChronoSync</h1>
+      <p>Smart Schedule Planner</p>
+    </div>
+    
+    <nav class="nav">
+      <div class="nav-section-title">Workspace</div>
+      <div class="nav-item active" onclick="showView('dashboard')">
+        <span class="icon">⚡</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showView('calendar')">
+        <span class="icon">📅</span> Calendar
+      </div>
+      <div class="nav-item" onclick="showView('events')">
+        <span class="icon">📋</span> All Events
+      </div>
+      <div class="nav-item" onclick="showView('planner')">
+        <span class="icon">🤖</span> AI Planner
+      </div>
+      
+      <div class="nav-section-title" style="margin-top:12px">Manage</div>
+      <div class="nav-item" onclick="showView('setup')">
+        <span class="icon">⚙️</span> Google Setup
+      </div>
+    </nav>
+
+    <div class="mini-calendar">
+      <div class="mini-cal-header">
+        <button class="mini-cal-nav" onclick="miniCalNav(-1)">‹</button>
+        <span id="miniCalTitle"></span>
+        <button class="mini-cal-nav" onclick="miniCalNav(1)">›</button>
+      </div>
+      <div class="mini-cal-grid" id="miniCalGrid"></div>
+    </div>
+
+    <button class="google-btn" id="googleConnectBtn" onclick="handleGoogleAuth()">
+      <span class="google-icon">🔗</span>
+      <span id="googleBtnText">Connect Google Calendar</span>
+    </button>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+    <header class="header">
+      <div class="header-left">
+        <h2 id="headerTitle">Dashboard</h2>
+        <p id="headerSub">Today is <span id="todayDate"></span></p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-ghost" onclick="openModal('shareModal')">🔗 Share Link</button>
+        <button class="btn btn-primary" onclick="openModal('eventModal')">+ New Event</button>
+      </div>
+    </header>
+
+    <div class="views">
+      <!-- DASHBOARD -->
+      <div class="view active" id="view-dashboard">
+        <div class="stat-cards">
+          <div class="stat-card purple">
+            <div class="stat-num" id="statTotal">0</div>
+            <div class="stat-label">Total Events</div>
+            <div class="stat-sub"><span id="statUpcoming">0</span> upcoming this week</div>
+          </div>
+          <div class="stat-card pink">
+            <div class="stat-num" id="statToday">0</div>
+            <div class="stat-label">Today's Events</div>
+            <div class="stat-sub">Plan your day</div>
+          </div>
+          <div class="stat-card cyan">
+            <div class="stat-num" id="statMeetings">0</div>
+            <div class="stat-label">Meetings</div>
+            <div class="stat-sub">This month</div>
+          </div>
+          <div class="stat-card yellow">
+            <div class="stat-num" id="statDeadlines">0</div>
+            <div class="stat-label">Deadlines</div>
+            <div class="stat-sub">Don't miss them!</div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid" style="margin-top:20px">
+          <div class="card">
+            <div class="card-header">
+              <h3>Today's Schedule</h3>
+              <span id="todayShort" style="font-size:12px;color:var(--text-muted)"></span>
+            </div>
+            <div class="timeline" id="todayTimeline">
+              <div class="empty-state" style="padding:24px">
+                <div class="es-icon">📭</div>
+                <p>No events today. <a href="#" onclick="openModal('eventModal');return false;" style="color:var(--accent)">Add one?</a></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>Upcoming</h3>
+              <button class="btn btn-ghost btn-sm" onclick="showView('events')">See all →</button>
+            </div>
+            <div class="upcoming-list" id="upcomingList">
+              <div class="empty-state" style="padding:24px">
+                <div class="es-icon">🗓️</div>
+                <p>No upcoming events.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CALENDAR VIEW -->
+      <div class="view" id="view-calendar">
+        <div class="calendar-header">
+          <div style="display:flex;align-items:center;gap:12px">
+            <button class="btn btn-ghost btn-sm" onclick="calNav(-1)">‹ Prev</button>
+            <h2 id="calTitle"></h2>
+            <button class="btn btn-ghost btn-sm" onclick="calNav(1)">Next ›</button>
+            <button class="btn btn-ghost btn-sm" onclick="goToday()">Today</button>
+          </div>
+          <div class="view-switcher">
+            <button class="view-switch-btn active" onclick="setCalView('month',this)">Month</button>
+            <button class="view-switch-btn" onclick="setCalView('week',this)">Week</button>
+          </div>
+        </div>
+        <div id="calendarContainer"></div>
+      </div>
+
+      <!-- EVENTS LIST -->
+      <div class="view" id="view-events">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:20px;font-weight:700">All Events</h2>
+            <p style="font-size:13px;color:var(--text-muted);margin-top:3px">Manage all your scheduled events</p>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="text" id="searchInput" placeholder="🔍  Search events..." style="padding:8px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:220px" oninput="filterEvents()">
+            <select id="filterType" onchange="filterEvents()" style="padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
+              <option value="">All Types</option>
+              <option value="meeting">Meeting</option>
+              <option value="deadline">Deadline</option>
+              <option value="personal">Personal</option>
+              <option value="reminder">Reminder</option>
+              <option value="focus">Focus Time</option>
+            </select>
+          </div>
+        </div>
+        <div class="events-list" id="eventsList"></div>
+      </div>
+
+      <!-- AI PLANNER -->
+      <div class="view" id="view-planner">
+        <div class="ai-planner">
+          <h3>🤖 AI Schedule Assistant</h3>
+          <p style="font-size:13px;color:var(--text-muted)">Describe your schedule needs and I'll help you organize your time efficiently.</p>
+          <div class="ai-suggestions">
+            <span class="ai-chip" onclick="usePrompt('Plan my morning routine for productivity')">☀️ Morning routine</span>
+            <span class="ai-chip" onclick="usePrompt('Schedule deep work blocks this week')">🧠 Deep work blocks</span>
+            <span class="ai-chip" onclick="usePrompt('Find best time for a team meeting next week')">👥 Team meeting time</span>
+            <span class="ai-chip" onclick="usePrompt('Create a study schedule for 2 hours a day')">📚 Study schedule</span>
+            <span class="ai-chip" onclick="usePrompt('Balance work and personal time better')">⚖️ Work-life balance</span>
+            <span class="ai-chip" onclick="usePrompt('Set up daily standup and review blocks')">🔄 Daily rituals</span>
+          </div>
+          <div class="ai-prompt">
+            <input type="text" id="aiInput" placeholder="Ask me anything about your schedule..." />
+            <button onclick="askAI()">✨ Plan</button>
+          </div>
+          <div class="ai-response" id="aiResponse"></div>
+        </div>
+
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:14px">📊 Schedule Analytics</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px" id="analyticsCards"></div>
+      </div>
+
+      <!-- SETUP VIEW -->
+      <div class="view" id="view-setup">
+        <div class="setup-box">
+          <h2 style="font-size:22px;font-weight:700;margin-bottom:6px">⚙️ Google Calendar Setup</h2>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:28px">Follow these steps exactly to connect your Google Calendar. Takes about 5 minutes.</p>
+
+          <div class="setup-step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h4>Create a Google Cloud Project & Enable Calendar API</h4>
+              <p>Go to <a href="https://console.cloud.google.com" target="_blank" style="color:var(--accent)">console.cloud.google.com</a> → <strong>New Project</strong> → give it any name → Create.<br>
+              Then go to <strong>APIs & Services → Library</strong>, search <code>Google Calendar API</code>, and click <strong>Enable</strong>.</p>
+            </div>
+          </div>
+
+          <div class="setup-step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h4>Create an API Key</h4>
+              <p>Go to <strong>APIs & Services → Credentials → Create Credentials → API Key</strong>.<br>
+              Copy the key. Optionally restrict it to "Google Calendar API" for security.</p>
+            </div>
+          </div>
+
+          <div class="setup-step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h4>Create OAuth 2.0 Client ID</h4>
+              <p>Still in Credentials → <strong>Create Credentials → OAuth Client ID</strong>.<br>
+              Set type to <code>Web application</code>.<br>
+              Under <strong>Authorized JavaScript origins</strong> add:<br>
+              <code>http://localhost:8080</code><br>
+              Under <strong>Authorized redirect URIs</strong> add:<br>
+              <code>http://localhost:8080</code><br>
+              Click Create and copy the <strong>Client ID</strong>.</p>
+            </div>
+          </div>
+
+          <div class="setup-step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <h4>Configure OAuth Consent Screen ⚠️ (Required!)</h4>
+              <p>Go to <strong>APIs & Services → OAuth consent screen</strong>.<br>
+              Choose <strong>External</strong> → Create.<br>
+              Fill in App name (e.g. "ChronoSync") and your email → Save.<br>
+              On the <strong>Scopes</strong> step → Add scope → search <code>calendar</code> → select <code>../auth/calendar</code> → Update → Save.<br>
+              On the <strong>Test users</strong> step → <strong>Add your own Google email address</strong> → Save.<br>
+              <em style="color:var(--warning)">⚠️ You MUST add your email as a test user or sign-in will be blocked.</em></p>
+            </div>
+          </div>
+
+          <div class="setup-step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <h4>Enter Your Credentials Below</h4>
+              <p>Paste your Client ID and API Key to enable Google Calendar sync.</p>
+              <div class="config-input-row">
+                <input type="text" id="clientIdInput" placeholder="Client ID  (xxxx.apps.googleusercontent.com)" style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-family:'DM Mono',monospace;outline:none" />
+              </div>
+              <div class="config-input-row">
+                <input type="text" id="apiKeyInput" placeholder="API Key  (AIzaSy...)" style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-family:'DM Mono',monospace;outline:none" />
+                <button class="btn btn-primary" onclick="saveGoogleConfig()">Save & Load</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="setupStatus" style="margin-top:16px"></div>
+
+          <div style="margin-top:20px;padding:16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:10px;">
+            <p style="font-size:12px;color:var(--text-muted);line-height:1.8;">
+              <strong style="color:var(--warning)">🔑 After saving credentials:</strong><br>
+              Click <strong>"Connect Google Calendar"</strong> in the sidebar → a Google popup opens → sign in with the email you added as a test user → grant calendar permissions → done! Events will sync automatically.
+            </p>
+          </div>
+
+          <div style="margin-top:12px;padding:16px;background:rgba(124,107,255,0.08);border:1px solid rgba(124,107,255,0.15);border-radius:10px;">
+            <p style="font-size:12px;color:var(--text-muted);line-height:1.7;">
+              <strong style="color:var(--accent)">💡 No Google needed:</strong> The app works fully offline with local storage. Events you create are saved in your browser automatically.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Event Detail Panel -->
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-panel-header">
+    <h3 style="font-size:16px;font-weight:700">Event Details</h3>
+    <button onclick="closeDetail()" style="background:var(--surface2);border:none;color:var(--text-muted);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px">×</button>
+  </div>
+  <div class="detail-panel-body" id="detailPanelBody"></div>
+</div>
+
+<!-- New Event Modal -->
+<div class="modal-overlay" id="eventModal">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeModal('eventModal')">×</button>
+    <h3 id="modalTitle">✨ New Event</h3>
+    <input type="hidden" id="editEventId">
+    <div class="form-group">
+      <label>Event Title</label>
+      <input type="text" id="eventTitle" placeholder="What's happening?" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="eventDate" />
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select id="eventType">
+          <option value="meeting">📊 Meeting</option>
+          <option value="deadline">🔴 Deadline</option>
+          <option value="personal">💚 Personal</option>
+          <option value="reminder">🔔 Reminder</option>
+          <option value="focus">🧠 Focus Time</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Start Time</label>
+        <input type="time" id="eventStart" />
+      </div>
+      <div class="form-group">
+        <label>End Time</label>
+        <input type="time" id="eventEnd" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="eventDesc" placeholder="Add details, agenda, notes..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Location / Link</label>
+      <input type="text" id="eventLocation" placeholder="Office, Zoom link, address..." />
+    </div>
+    <div class="form-group">
+      <label>Attendees (comma separated emails)</label>
+      <input type="text" id="eventAttendees" placeholder="jane@email.com, john@email.com" />
+    </div>
+    <div class="form-group">
+      <label>Color</label>
+      <div class="color-picker" id="colorPicker"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('eventModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEvent()">Save Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal-overlay" id="shareModal">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeModal('shareModal')">×</button>
+    <h3>🔗 Share Meeting Link</h3>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Share your scheduling link so others can see your availability and request meetings.</p>
+    
+    <div class="form-group">
+      <label>Your Schedule Link</label>
+      <div class="share-link-box">
+        <input type="text" id="shareLinkInput" readonly />
+        <button class="share-link-copy" onclick="copyShareLink()">Copy</button>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top:16px">
+      <label>Quick Meeting Request</label>
+      <input type="text" id="meetingRequesterName" placeholder="Requester's name" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Proposed Date</label>
+        <input type="date" id="meetingDate" />
+      </div>
+      <div class="form-group">
+        <label>Proposed Time</label>
+        <input type="time" id="meetingTime" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Subject</label>
+      <input type="text" id="meetingSubject" placeholder="What's the meeting about?" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('shareModal')">Close</button>
+      <button class="btn btn-primary" onclick="requestMeeting()">📨 Request Meeting</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ============================================================
+// DATA & STATE
+// ============================================================
+const COLORS = ['#7c6bff','#ff6b9d','#6bffda','#fbbf24','#f87171','#34d399','#60a5fa','#a78bfa'];
+const COLOR_NAMES = {
+  '#7c6bff':'purple','#ff6b9d':'pink','#6bffda':'cyan',
+  '#fbbf24':'yellow','#f87171':'red','#34d399':'green',
+  '#60a5fa':'blue','#a78bfa':'violet'
+};
+
+let state = {
+  events: JSON.parse(localStorage.getItem('cs_events') || '[]'),
+  googleConfig: JSON.parse(localStorage.getItem('cs_google') || 'null'),
+  googleConnected: false,
+  calDate: new Date(),
+  calView: 'month',
+  miniCalDate: new Date(),
+  currentView: 'dashboard',
+};
+
+// On load: if Google is configured, immediately strip any seed/demo events
+// (events with no googleId and no manuallyCreated flag are seed data)
+if (state.googleConfig?.clientId) {
+  const before = state.events.length;
+  state.events = state.events.filter(e => e.googleId || e.manuallyCreated === true);
+  if (before !== state.events.length) {
+    localStorage.setItem('cs_events', JSON.stringify(state.events));
+    console.log('[ChronoSync] Cleared', before - state.events.length, 'seed events on load');
+  }
+}
+
+function saveState() {
+  localStorage.setItem('cs_events', JSON.stringify(state.events));
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  const today = new Date();
+  document.getElementById('todayDate').textContent = today.toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  document.getElementById('todayShort').textContent = today.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  
+  initColorPicker();
+  renderMiniCal();
+  renderDashboard();
+  renderCalendar();
+  renderEventsList();
+  renderAnalytics();
+  
+  // Set default date for new event
+  document.getElementById('eventDate').value = today.toISOString().split('T')[0];
+  document.getElementById('shareLinkInput').value = `${window.location.href}?schedule=shared`;
+  document.getElementById('meetingDate').value = today.toISOString().split('T')[0];
+  
+  // Pre-fill credentials & auto-load Google libraries
+  const KNOWN_CLIENT_ID = '146187719294-rlngc03eln21as5706btctq75sv5p222.apps.googleusercontent.com';
+  const KNOWN_API_KEY   = 'AIzaSyDh9CpXcHjtEwi6ay9H_PJ82Lbk3WRBrUU';
+  if (!state.googleConfig) {
+    state.googleConfig = { clientId: KNOWN_CLIENT_ID, apiKey: KNOWN_API_KEY };
+    localStorage.setItem('cs_google', JSON.stringify(state.googleConfig));
+  }
+  const ciEl = document.getElementById('clientIdInput');
+  const akEl = document.getElementById('apiKeyInput');
+  if (ciEl) ciEl.value = state.googleConfig.clientId || '';
+  if (akEl) akEl.value = state.googleConfig.apiKey   || '';
+  if (state.googleConfig.clientId) tryLoadGoogleAPI();
+
+  // Only seed sample data if Google Calendar is NOT configured
+  // If Google IS configured, syncGoogleCalendar() will replace them anyway
+  if (state.events.length === 0 && !state.googleConfig?.clientId) {
+    seedSampleData();
+  }
+});
+
+function seedSampleData() {
+  // Never seed if Google Calendar is configured — real events will come from there
+  if (state.googleConfig?.clientId) return;
+  const today = new Date();
+  const fmt = (d) => d.toISOString().split('T')[0];
+  const d = (offset) => { const nd = new Date(today); nd.setDate(nd.getDate()+offset); return fmt(nd); };
+  
+  const samples = [
+    { title:'Team Standup', date: d(0), start:'09:00', end:'09:30', type:'meeting', color:'#7c6bff', desc:'Daily sync with the dev team', location:'Zoom', attendees:'' },
+    { title:'Design Review', date: d(0), start:'14:00', end:'15:00', type:'meeting', color:'#ff6b9d', desc:'Review new UI designs', location:'Conference Room A', attendees:'' },
+    { title:'Project Deadline', date: d(2), start:'18:00', end:'18:00', type:'deadline', color:'#f87171', desc:'Submit final project report', location:'', attendees:'' },
+    { title:'Lunch with Sarah', date: d(1), start:'12:30', end:'13:30', type:'personal', color:'#6bffda', desc:'Catch up over lunch', location:'The Bistro', attendees:'' },
+    { title:'Quarterly Planning', date: d(5), start:'10:00', end:'12:00', type:'meeting', color:'#7c6bff', desc:'Q1 planning session', location:'Board Room', attendees:'' },
+    { title:'Deep Work Block', date: d(0), start:'10:00', end:'12:00', type:'focus', color:'#a78bfa', desc:'No interruptions - deep coding session', location:'', attendees:'' },
+    { title:'Call Doctor', date: d(3), start:'09:00', end:'09:00', type:'reminder', color:'#fbbf24', desc:'Schedule annual checkup', location:'', attendees:'' },
+    { title:'Gym Session', date: d(1), start:'07:00', end:'08:00', type:'personal', color:'#34d399', desc:'Morning workout', location:'Fitness Center', attendees:'' },
+  ];
+  
+  samples.forEach(s => {
+    state.events.push({ id: genId(), ...s, createdAt: new Date().toISOString() });
+  });
+  saveState();
+  renderAll();
+}
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
+
+// ============================================================
+// VIEWS
+// ============================================================
+function showView(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`view-${view}`).classList.add('active');
+  
+  const titles = { dashboard:'Dashboard', calendar:'Calendar', events:'All Events', planner:'AI Planner', setup:'Settings' };
+  document.getElementById('headerTitle').textContent = titles[view] || view;
+  
+  const navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(n => {
+    if (n.textContent.toLowerCase().includes(view.toLowerCase().substring(0,4))) {
+      n.classList.add('active');
+    }
+  });
+
+  state.currentView = view;
+  if (view === 'calendar') renderCalendar();
+  if (view === 'events') renderEventsList();
+  if (view === 'dashboard') renderDashboard();
+  if (view === 'planner') renderAnalytics();
+}
+
+function renderAll() {
+  renderDashboard();
+  renderCalendar();
+  renderEventsList();
+  renderAnalytics();
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  const todayEvents = state.events.filter(e => e.date === todayStr).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+  
+  // Stats
+  const weekStart = new Date(today); weekStart.setDate(today.getDate() - today.getDay());
+  const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 7);
+  const upcomingWeek = state.events.filter(e => { const d = new Date(e.date); return d >= today && d <= weekEnd; });
+  
+  document.getElementById('statTotal').textContent = state.events.length;
+  document.getElementById('statToday').textContent = todayEvents.length;
+  document.getElementById('statMeetings').textContent = state.events.filter(e=>e.type==='meeting').length;
+  document.getElementById('statDeadlines').textContent = state.events.filter(e=>e.type==='deadline').length;
+  document.getElementById('statUpcoming').textContent = upcomingWeek.length;
+
+  // Today timeline
+  const timeline = document.getElementById('todayTimeline');
+  if (todayEvents.length === 0) {
+    timeline.innerHTML = `<div class="empty-state" style="padding:24px"><div class="es-icon">📭</div><p>No events today. <a href="#" onclick="openModal('eventModal');return false;" style="color:var(--accent)">Add one?</a></p></div>`;
+  } else {
+    timeline.innerHTML = todayEvents.map(e => `
+      <div class="timeline-item" onclick="showDetail('${e.id}')">
+        <div class="timeline-dot" style="background:${e.color||'#7c6bff'}"></div>
+        <div class="timeline-time">${e.start||'All day'}</div>
+        <div style="flex:1">
+          <div class="timeline-title">${e.title}</div>
+          <div class="timeline-sub">${e.location||e.desc||''}</div>
+        </div>
+        <span class="timeline-tag tag-${e.type}">${capitalize(e.type)}</span>
+      </div>`).join('');
+  }
+  
+  // Upcoming
+  const upcoming = state.events.filter(e => e.date > todayStr).sort((a,b)=>a.date.localeCompare(b.date)).slice(0, 8);
+  const upcomingList = document.getElementById('upcomingList');
+  if (upcoming.length === 0) {
+    upcomingList.innerHTML = `<div class="empty-state" style="padding:24px"><div class="es-icon">🗓️</div><p>No upcoming events.</p></div>`;
+  } else {
+    upcomingList.innerHTML = upcoming.map(e => {
+      const d = new Date(e.date + 'T12:00:00');
+      return `
+      <div class="upcoming-item" onclick="showDetail('${e.id}')">
+        <div class="upcoming-date">
+          <div class="day" style="color:${e.color||'#7c6bff'}">${d.getDate()}</div>
+          <div class="mon">${d.toLocaleDateString('en-US',{month:'short'})}</div>
+        </div>
+        <div class="upcoming-info">
+          <div class="title">${e.title}</div>
+          <div class="sub">${e.start ? e.start+' – '+(e.end||e.start) : 'All day'} · ${e.type}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ============================================================
+// CALENDAR
+// ============================================================
+function renderCalendar() {
+  const container = document.getElementById('calendarContainer');
+  if (state.calView === 'month') {
+    renderMonthCal(container);
+  } else {
+    renderWeekCal(container);
+  }
+  document.getElementById('calTitle').textContent = state.calDate.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+}
+
+function renderMonthCal(container) {
+  const year = state.calDate.getFullYear(), month = state.calDate.getMonth();
+  const today = new Date();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+  let days = '';
+  // Prev month days
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const d = daysInPrevMonth - i;
+    const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    days += dayCell(dateStr, d, 'other-month', year, month-1, d);
+  }
+  // Current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = today.getFullYear()===year && today.getMonth()===month && today.getDate()===d;
+    days += dayCell(dateStr, d, isToday ? 'today' : '', year, month, d);
+  }
+  // Next month days
+  const remaining = 42 - (firstDay + daysInMonth);
+  for (let d = 1; d <= remaining; d++) {
+    const dateStr = `${year}-${String(month+2).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    days += dayCell(dateStr, d, 'other-month', year, month+1, d);
+  }
+
+  container.innerHTML = `
+    <div class="cal-grid">
+      <div class="cal-weekdays">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-weekday">${d}</div>`).join('')}</div>
+      <div class="cal-days">${days}</div>
+    </div>`;
+}
+
+function dayCell(dateStr, d, cls, year, month, day) {
+  const dayEvents = state.events.filter(e => e.date === dateStr);
+  const shown = dayEvents.slice(0,3);
+  const more = dayEvents.length - 3;
+  const eventsHtml = shown.map(e => `<div class="cal-event" style="background:${e.color||'#7c6bff'}22;color:${e.color||'#7c6bff'};border-left:2px solid ${e.color||'#7c6bff'}" onclick="event.stopPropagation();showDetail('${e.id}')">${e.start ? e.start+' ' : ''}${e.title}</div>`).join('');
+  const moreHtml = more > 0 ? `<div class="more-events">+${more} more</div>` : '';
+  return `<div class="cal-day ${cls}" onclick="calDayClick('${dateStr}')"><div class="cal-day-num">${d}</div>${eventsHtml}${moreHtml}</div>`;
+}
+
+function calDayClick(dateStr) {
+  document.getElementById('eventDate').value = dateStr;
+  openModal('eventModal');
+}
+
+function renderWeekCal(container) {
+  const weekStart = new Date(state.calDate);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  const today = new Date();
+  const HOURS = Array.from({length:24}, (_,i) => i);
+  const DAYS = Array.from({length:7}, (_,i) => { const d = new Date(weekStart); d.setDate(weekStart.getDate()+i); return d; });
+
+  const headerCols = DAYS.map((d,i) => {
+    const isToday = d.toDateString() === today.toDateString();
+    return `<div class="week-day-col ${isToday?'today-col':''}">
+      <div class="wd-name">${d.toLocaleDateString('en-US',{weekday:'short'})}</div>
+      <div class="wd-num">${d.getDate()}</div>
+    </div>`;
+  }).join('');
+
+  const timeSlots = HOURS.map(h => `<div class="week-time-label">${h===0?'12am':h<12?h+'am':h===12?'12pm':(h-12)+'pm'}</div>`).join('');
+  
+  const dayCols = DAYS.map(d => {
+    const dateStr = d.toISOString().split('T')[0];
+    const dayEvts = state.events.filter(e => e.date === dateStr && e.start);
+    const eventsHtml = dayEvts.map(e => {
+      const startH = parseInt(e.start.split(':')[0]), startM = parseInt(e.start.split(':')[1]||0);
+      const endH = parseInt((e.end||e.start).split(':')[0]), endM = parseInt((e.end||e.start).split(':')[1]||0);
+      const top = startH*60 + startM;
+      const height = Math.max(30, (endH*60+endM) - (startH*60+startM));
+      return `<div class="week-event" style="top:${top}px;height:${height}px;background:${e.color||'#7c6bff'}33;border-left:3px solid ${e.color||'#7c6bff'};color:${e.color||'#7c6bff'}" onclick="showDetail('${e.id}')">${e.title}</div>`;
+    }).join('');
+    const slots = HOURS.map(h => `<div class="week-slot" onclick="weekSlotClick('${dateStr}','${String(h).padStart(2,'0')}:00')"></div>`).join('');
+    return `<div class="week-day-slots" style="position:relative">${slots}${eventsHtml}</div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="week-grid">
+      <div class="week-header">
+        <div class="week-time-col"></div>
+        ${headerCols}
+      </div>
+      <div class="week-body">
+        <div class="week-time-slots">${timeSlots}</div>
+        ${dayCols}
+      </div>
+    </div>`;
+}
+
+function weekSlotClick(dateStr, time) {
+  document.getElementById('eventDate').value = dateStr;
+  document.getElementById('eventStart').value = time;
+  openModal('eventModal');
+}
+
+function setCalView(v, btn) {
+  state.calView = v;
+  document.querySelectorAll('.view-switch-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCalendar();
+}
+
+function calNav(dir) {
+  if (state.calView === 'month') {
+    state.calDate.setMonth(state.calDate.getMonth() + dir);
+  } else {
+    state.calDate.setDate(state.calDate.getDate() + dir * 7);
+  }
+  renderCalendar();
+}
+
+function goToday() {
+  state.calDate = new Date();
+  renderCalendar();
+}
+
+// ============================================================
+// MINI CALENDAR
+// ============================================================
+function renderMiniCal() {
+  const d = state.miniCalDate;
+  const year = d.getFullYear(), month = d.getMonth();
+  const today = new Date();
+  document.getElementById('miniCalTitle').textContent = d.toLocaleDateString('en-US',{month:'short',year:'numeric'});
+  
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  
+  let html = ['S','M','T','W','T','F','S'].map(l=>`<div class="mini-cal-day-label">${l}</div>`).join('');
+  
+  for (let i=0;i<firstDay;i++) html += `<div class="mini-cal-day other-month"></div>`;
+  
+  for (let d=1;d<=daysInMonth;d++) {
+    const isToday = today.getFullYear()===year && today.getMonth()===month && today.getDate()===d;
+    html += `<div class="mini-cal-day ${isToday?'today':''}" onclick="miniCalClick(${year},${month},${d})">${d}</div>`;
+  }
+  
+  document.getElementById('miniCalGrid').innerHTML = html;
+}
+
+function miniCalNav(dir) {
+  state.miniCalDate.setMonth(state.miniCalDate.getMonth()+dir);
+  renderMiniCal();
+}
+
+function miniCalClick(y, m, d) {
+  state.calDate = new Date(y, m, d);
+  showView('calendar');
+  renderCalendar();
+}
+
+// ============================================================
+// EVENTS LIST
+// ============================================================
+function renderEventsList() {
+  filterEvents();
+}
+
+function filterEvents() {
+  const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const type = document.getElementById('filterType')?.value || '';
+  
+  let filtered = state.events.filter(e => {
+    const matchSearch = !search || e.title.toLowerCase().includes(search) || (e.desc||'').toLowerCase().includes(search) || (e.location||'').toLowerCase().includes(search);
+    const matchType = !type || e.type === type;
+    return matchSearch && matchType;
+  }).sort((a,b) => a.date.localeCompare(b.date));
+
+  const container = document.getElementById('eventsList');
+  if (!container) return;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="es-icon">📭</div><h3>No events found</h3><p>Try a different search or create a new event.</p></div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(e => {
+    const d = new Date(e.date + 'T12:00:00');
+    return `
+    <div class="event-card" onclick="showDetail('${e.id}')">
+      <div class="event-color-bar" style="background:${e.color||'#7c6bff'}"></div>
+      <div class="event-card-date">
+        <div class="day" style="color:${e.color||'#7c6bff'}">${d.getDate()}</div>
+        <div class="mon">${d.toLocaleDateString('en-US',{month:'short'})}</div>
+      </div>
+      <div class="event-card-info">
+        <div class="event-card-title">${e.title}</div>
+        <div class="event-card-meta">
+          ${e.start ? `<span>🕐 ${e.start}${e.end?' – '+e.end:''}</span>` : '<span>All day</span>'}
+          ${e.location ? `<span>📍 ${e.location}</span>` : ''}
+          <span class="timeline-tag tag-${e.type}">${capitalize(e.type)}</span>
+        </div>
+      </div>
+      <div class="event-card-actions" onclick="event.stopPropagation()">
+        <button class="btn btn-ghost btn-sm" onclick="editEvent('${e.id}')">✏️</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="deleteEvent('${e.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// EVENT CRUD
+// ============================================================
+function saveEvent() {
+  const title = document.getElementById('eventTitle').value.trim();
+  if (!title) { showToast('Please enter an event title', 'error'); return; }
+  
+  const id = document.getElementById('editEventId').value || genId();
+  const isEdit = !!document.getElementById('editEventId').value;
+  
+  const event = {
+    id,
+    title,
+    date: document.getElementById('eventDate').value || new Date().toISOString().split('T')[0],
+    start: document.getElementById('eventStart').value,
+    end: document.getElementById('eventEnd').value,
+    type: document.getElementById('eventType').value,
+    desc: document.getElementById('eventDesc').value,
+    location: document.getElementById('eventLocation').value,
+    attendees: document.getElementById('eventAttendees').value,
+    color: document.querySelector('.color-dot.selected')?.dataset.color || '#7c6bff',
+    createdAt: new Date().toISOString(),
+    manuallyCreated: true,
+  };
+
+  if (isEdit) {
+    const idx = state.events.findIndex(e => e.id === id);
+    if (idx >= 0) state.events[idx] = event;
+    showToast('Event updated!', 'success');
+  } else {
+    state.events.push(event);
+    showToast('Event created!', 'success');
+    
+    // Try to add to Google Calendar
+    if (state.googleConnected) addToGoogleCalendar(event);
+  }
+  
+  saveState();
+  closeModal('eventModal');
+  renderAll();
+  resetEventForm();
+}
+
+function editEvent(id) {
+  const e = state.events.find(ev => ev.id === id);
+  if (!e) return;
+  
+  document.getElementById('modalTitle').textContent = '✏️ Edit Event';
+  document.getElementById('editEventId').value = e.id;
+  document.getElementById('eventTitle').value = e.title;
+  document.getElementById('eventDate').value = e.date;
+  document.getElementById('eventStart').value = e.start || '';
+  document.getElementById('eventEnd').value = e.end || '';
+  document.getElementById('eventType').value = e.type;
+  document.getElementById('eventDesc').value = e.desc || '';
+  document.getElementById('eventLocation').value = e.location || '';
+  document.getElementById('eventAttendees').value = e.attendees || '';
+  
+  document.querySelectorAll('.color-dot').forEach(d => {
+    d.classList.toggle('selected', d.dataset.color === e.color);
+  });
+  
+  openModal('eventModal');
+}
+
+function deleteEvent(id) {
+  if (!confirm('Delete this event?')) return;
+  state.events = state.events.filter(e => e.id !== id);
+  saveState();
+  renderAll();
+  closeDetail();
+  showToast('Event deleted', 'success');
+}
+
+function resetEventForm() {
+  document.getElementById('modalTitle').textContent = '✨ New Event';
+  document.getElementById('editEventId').value = '';
+  document.getElementById('eventTitle').value = '';
+  document.getElementById('eventDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('eventStart').value = '';
+  document.getElementById('eventEnd').value = '';
+  document.getElementById('eventType').value = 'meeting';
+  document.getElementById('eventDesc').value = '';
+  document.getElementById('eventLocation').value = '';
+  document.getElementById('eventAttendees').value = '';
+  document.querySelectorAll('.color-dot').forEach((d,i) => d.classList.toggle('selected', i===0));
+}
+
+// ============================================================
+// COLOR PICKER
+// ============================================================
+function initColorPicker() {
+  const cp = document.getElementById('colorPicker');
+  cp.innerHTML = COLORS.map((c,i) => `<div class="color-dot ${i===0?'selected':''}" data-color="${c}" style="background:${c}" onclick="selectColor(this)"></div>`).join('');
+}
+
+function selectColor(dot) {
+  document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+  dot.classList.add('selected');
+}
+
+// ============================================================
+// EVENT DETAIL PANEL
+// ============================================================
+function showDetail(id) {
+  const e = state.events.find(ev => ev.id === id);
+  if (!e) return;
+  
+  const d = new Date(e.date + 'T12:00:00');
+  document.getElementById('detailPanelBody').innerHTML = `
+    <div style="height:6px;border-radius:3px;background:${e.color||'#7c6bff'};margin-bottom:20px"></div>
+    <h2 style="font-size:18px;font-weight:700;margin-bottom:4px">${e.title}</h2>
+    <span class="timeline-tag tag-${e.type}" style="font-size:11px">${capitalize(e.type)}</span>
+    
+    <div style="margin-top:20px">
+      <div class="detail-field">
+        <label>📅 Date</label>
+        <p>${d.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</p>
+      </div>
+      ${e.start ? `<div class="detail-field"><label>🕐 Time</label><p>${e.start}${e.end?' – '+e.end:''}</p></div>` : ''}
+      ${e.location ? `<div class="detail-field"><label>📍 Location</label><p>${e.location}</p></div>` : ''}
+      ${e.desc ? `<div class="detail-field"><label>📝 Notes</label><p style="line-height:1.6;color:var(--text-muted)">${e.desc}</p></div>` : ''}
+      ${e.attendees ? `<div class="detail-field"><label>👥 Attendees</label><p style="font-size:13px;color:var(--text-muted)">${e.attendees}</p></div>` : ''}
+    </div>
+    
+    <div style="display:flex;gap:8px;margin-top:24px">
+      <button class="btn btn-ghost btn-sm" onclick="editEvent('${e.id}')" style="flex:1">✏️ Edit</button>
+      <button class="btn btn-ghost btn-sm" onclick="deleteEvent('${e.id}')" style="flex:1;color:var(--danger);border-color:var(--danger)">🗑️ Delete</button>
+    </div>
+    
+    ${e.attendees ? `
+    <div style="margin-top:16px;padding:12px;background:var(--surface2);border-radius:10px">
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Share meeting details</p>
+      <button class="btn btn-ghost btn-sm" style="width:100%" onclick="shareMeetingDetails('${e.id}')">📤 Share Event Details</button>
+    </div>` : ''}
+  `;
+  
+  document.getElementById('detailPanel').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('open');
+}
+
+function shareMeetingDetails(id) {
+  const e = state.events.find(ev => ev.id === id);
+  if (!e) return;
+  const d = new Date(e.date + 'T12:00:00');
+  const text = `📅 Meeting: ${e.title}\n🗓️ ${d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}\n🕐 ${e.start||'All day'}${e.end?' – '+e.end:''}\n📍 ${e.location||'TBD'}\n\n${e.desc||''}`;
+  navigator.clipboard.writeText(text).then(() => showToast('Meeting details copied!', 'success')).catch(()=>{});
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  if (id === 'eventModal') resetEventForm();
+}
+
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.classList.remove('open');
+    resetEventForm();
+  }
+  if (!e.target.closest('.detail-panel') && !e.target.closest('.timeline-item') && !e.target.closest('.upcoming-item') && !e.target.closest('.event-card') && !e.target.closest('.cal-event') && !e.target.closest('.week-event')) {
+    // closeDetail(); // keep open for better UX
+  }
+});
+
+// ============================================================
+// SHARE / MEETING
+// ============================================================
+function copyShareLink() {
+  navigator.clipboard.writeText(document.getElementById('shareLinkInput').value)
+    .then(() => showToast('Link copied to clipboard!', 'success'))
+    .catch(() => showToast('Copy failed. Try manually.', 'error'));
+}
+
+function requestMeeting() {
+  const name = document.getElementById('meetingRequesterName').value;
+  const date = document.getElementById('meetingDate').value;
+  const time = document.getElementById('meetingTime').value;
+  const subject = document.getElementById('meetingSubject').value;
+  
+  if (!name || !date || !subject) { showToast('Please fill all meeting fields', 'error'); return; }
+  
+  // Add as pending event
+  const event = {
+    id: genId(),
+    title: `Meeting: ${subject} (with ${name})`,
+    date, start: time, end: '',
+    type: 'meeting',
+    color: '#ff6b9d',
+    desc: `Requested by ${name}`,
+    location: '', attendees: '', createdAt: new Date().toISOString(),
+  };
+  state.events.push(event);
+  saveState();
+  renderAll();
+  closeModal('shareModal');
+  showToast(`Meeting request from ${name} added!`, 'success');
+}
+
+// ============================================================
+// AI PLANNER
+// ============================================================
+function usePrompt(text) {
+  document.getElementById('aiInput').value = text;
+  askAI();
+}
+
+function askAI() {
+  const input = document.getElementById('aiInput').value.trim();
+  if (!input) return;
+  
+  const response = document.getElementById('aiResponse');
+  response.classList.add('show');
+  response.innerHTML = `<div class="loading"><div class="spinner"></div> Analyzing your schedule...</div>`;
+  
+  setTimeout(() => {
+    const todayEvents = state.events.filter(e => e.date === new Date().toISOString().split('T')[0]);
+    const weekEvents = state.events.filter(e => {
+      const d = new Date(e.date);
+      const now = new Date();
+      const weekEnd = new Date(now); weekEnd.setDate(now.getDate()+7);
+      return d >= now && d <= weekEnd;
+    });
+    
+    const aiResponse = generateAIResponse(input, todayEvents, weekEvents, state.events);
+    response.innerHTML = aiResponse;
+  }, 800);
+}
+
+function generateAIResponse(query, todayEvts, weekEvts, allEvts) {
+  const q = query.toLowerCase();
+  const meetings = allEvts.filter(e=>e.type==='meeting').length;
+  const deadlines = allEvts.filter(e=>e.type==='deadline').length;
+  const focusBlocks = allEvts.filter(e=>e.type==='focus').length;
+  
+  // Identify busy hours
+  const hourCounts = {};
+  allEvts.forEach(e => { if(e.start) { const h = parseInt(e.start); hourCounts[h] = (hourCounts[h]||0)+1; } });
+  const busiestHour = Object.entries(hourCounts).sort((a,b)=>b[1]-a[1])[0];
+  
+  let advice = '';
+  
+  if (q.includes('morning') || q.includes('routine')) {
+    advice = `
+      <strong>☀️ Recommended Morning Routine</strong><br><br>
+      Based on your schedule, here's an optimized morning framework:<br><br>
+      • <strong>6:00–6:30 AM</strong> — Wake up & mindfulness (meditation/journaling)<br>
+      • <strong>6:30–7:30 AM</strong> — Exercise or physical activity<br>
+      • <strong>7:30–8:00 AM</strong> — Shower, breakfast, prep<br>
+      • <strong>8:00–9:00 AM</strong> — Deep review of day's priorities & emails<br>
+      • <strong>9:00 AM</strong> — First meeting/focused work block<br><br>
+      💡 <em>You currently have ${todayEvts.length} events today. Protecting that morning window before 9am will set you up for success.</em>
+    `;
+  } else if (q.includes('deep work') || q.includes('focus')) {
+    const busyTimes = ['9 AM', '2 PM', '4 PM'];
+    advice = `
+      <strong>🧠 Deep Work Schedule Recommendation</strong><br><br>
+      You have ${focusBlocks} focus blocks scheduled. Here's how to optimize:<br><br>
+      • <strong>Best deep work windows:</strong> 9 AM–12 PM (before meetings pile up)<br>
+      • <strong>Protect these hours:</strong> Block your calendar with "Do Not Disturb" events<br>
+      • <strong>Suggested blocks this week:</strong><br>
+        — Mon/Wed/Fri: 9:00–11:30 AM (2.5hr sessions)<br>
+        — Tue/Thu: 2:00–4:00 PM (if mornings are busy)<br><br>
+      💡 <em>Studies show 90-min focus blocks with 20-min breaks maximize cognitive output. Try the Pomodoro method!</em>
+    `;
+  } else if (q.includes('meeting') || q.includes('team')) {
+    advice = `
+      <strong>👥 Meeting Optimization</strong><br><br>
+      You have <strong>${meetings} meetings</strong> scheduled. Analysis:<br><br>
+      • <strong>Meeting load:</strong> ${meetings > 10 ? '⚠️ High — consider batching or cancelling some' : '✅ Manageable'}<br>
+      • <strong>Best meeting windows:</strong> 10–11:30 AM and 1–3 PM<br>
+      • <strong>Avoid scheduling:</strong> First 2 hours of your day (protect for deep work)<br><br>
+      <strong>📋 This week's upcoming:</strong><br>
+      ${weekEvts.filter(e=>e.type==='meeting').slice(0,3).map(e=>`• ${e.title} — ${e.date} at ${e.start||'TBD'}`).join('<br>') || '• No meetings this week'}<br><br>
+      💡 <em>Try "Meeting-Free Wednesdays" to give everyone (including yourself) uninterrupted work time.</em>
+    `;
+  } else if (q.includes('study') || q.includes('learn')) {
+    advice = `
+      <strong>📚 Study Schedule (2hrs/day)</strong><br><br>
+      Optimal study plan based on your available windows:<br><br>
+      • <strong>Session 1:</strong> 7:00–8:00 AM (morning brain is sharpest for new material)<br>
+      • <strong>Session 2:</strong> 7:00–8:00 PM (review & practice problems)<br><br>
+      <strong>Weekly structure:</strong><br>
+      • Mon/Wed/Fri: New concepts & reading<br>
+      • Tue/Thu: Practice & application<br>
+      • Sat: Review & catch-up<br>
+      • Sun: Light review + plan next week<br><br>
+      💡 <em>Spaced repetition is key — review material after 1 day, 1 week, and 1 month for best retention.</em>
+    `;
+  } else if (q.includes('balance') || q.includes('personal')) {
+    const personalPct = Math.round((allEvts.filter(e=>e.type==='personal').length / Math.max(1,allEvts.length)) * 100);
+    advice = `
+      <strong>⚖️ Work-Life Balance Analysis</strong><br><br>
+      Current breakdown: <strong>${personalPct}% personal</strong> events out of all scheduled items.<br><br>
+      ${personalPct < 20 ? '⚠️ You might be over-scheduled on work. Consider adding personal time blocks.' : '✅ Good balance! Keep protecting personal time.'}<br><br>
+      <strong>Recommendations:</strong><br>
+      • Block at least 1 personal activity per day<br>
+      • Schedule "shutdown ritual" at 6 PM — no work after<br>
+      • Add weekend buffer events to protect rest time<br>
+      • Aim for 1 social activity per week minimum<br><br>
+      💡 <em>Sustainable productivity requires intentional recovery. Your calendar should reflect your values, not just your obligations.</em>
+    `;
+  } else if (q.includes('standup') || q.includes('daily') || q.includes('ritual')) {
+    advice = `
+      <strong>🔄 Daily Ritual Framework</strong><br><br>
+      Build consistency with these recurring blocks:<br><br>
+      <strong>Morning (15 min):</strong><br>
+      • Review calendar & top 3 priorities<br>
+      • Check messages, respond to urgents<br><br>
+      <strong>Midday (10 min):</strong><br>
+      • Progress check — am I on track?<br>
+      • Adjust afternoon if needed<br><br>
+      <strong>End of day (15 min):</strong><br>
+      • Log what was accomplished<br>
+      • Set up tomorrow's priorities<br>
+      • Clear inbox to zero<br><br>
+      💡 <em>Click "New Event" to add these as recurring blocks! Consistency compounds over time.</em>
+    `;
+  } else {
+    advice = `
+      <strong>📊 Your Schedule Overview</strong><br><br>
+      Here's a snapshot of your planning data:<br><br>
+      • <strong>Total events:</strong> ${allEvts.length}<br>
+      • <strong>Today:</strong> ${todayEvts.length} events<br>
+      • <strong>This week:</strong> ${weekEvts.length} events<br>
+      • <strong>Meetings:</strong> ${meetings} | <strong>Deadlines:</strong> ${deadlines} | <strong>Focus blocks:</strong> ${focusBlocks}<br>
+      ${busiestHour ? `• <strong>Busiest hour:</strong> ${busiestHour[0]}:00 (${busiestHour[1]} events)<br>` : ''}<br>
+      <strong>💡 Suggestions for your query:</strong><br>
+      Try asking about: "morning routine", "deep work blocks", "meeting times", "study schedule", or "work-life balance" for personalized recommendations.
+    `;
+  }
+  
+  return `<div style="line-height:1.8">${advice}</div>`;
+}
+
+// ============================================================
+// ANALYTICS
+// ============================================================
+function renderAnalytics() {
+  const container = document.getElementById('analyticsCards');
+  if (!container) return;
+  
+  const byType = {};
+  state.events.forEach(e => { byType[e.type] = (byType[e.type]||0)+1; });
+  
+  const typeColors = { meeting:'#7c6bff', deadline:'#f87171', personal:'#6bffda', reminder:'#fbbf24', focus:'#ff6b9d' };
+  const typeIcons = { meeting:'📊', deadline:'🔴', personal:'💚', reminder:'🔔', focus:'🧠' };
+  
+  const cards = Object.entries(byType).map(([type, count]) => `
+    <div class="stat-card" style="border-top:2px solid ${typeColors[type]||'#7c6bff'}22">
+      <div style="font-size:24px;margin-bottom:8px">${typeIcons[type]||'📌'}</div>
+      <div class="stat-num" style="color:${typeColors[type]||'#7c6bff'};font-size:28px">${count}</div>
+      <div class="stat-label">${capitalize(type)} events</div>
+      <div style="height:4px;background:var(--surface2);border-radius:2px;margin-top:12px">
+        <div style="height:4px;background:${typeColors[type]||'#7c6bff'};border-radius:2px;width:${Math.min(100,(count/state.events.length)*100)}%"></div>
+      </div>
+    </div>`).join('');
+  
+  container.innerHTML = cards || `<div class="empty-state"><p>No events to analyze yet.</p></div>`;
+}
+
+// ============================================================
+// GOOGLE CALENDAR INTEGRATION (Modern GIS + gapi.client)
+// ============================================================
+
+const GCAL_SCOPES    = 'https://www.googleapis.com/auth/calendar';
+const GCAL_DISCOVERY = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
+
+let tokenClient  = null;
+let gapiReady    = false;
+let gisReady     = false;
+let gapiLoading  = false;
+let gisLoading   = false;
+
+// ── Debug logger (shows in the Setup status box) ─────────────
+function gLog(msg, type = 'info') {
+  console.log(`[ChronoSync] ${msg}`);
+  const box = document.getElementById('setupStatus');
+  if (!box) return;
+  const color = type === 'error' ? '#f87171' : type === 'ok' ? '#4ade80' : '#fbbf24';
+  const icon  = type === 'error' ? '❌' : type === 'ok' ? '✅' : '⚙️';
+  const existing = box.innerHTML;
+  const line = `<div style="font-size:12px;color:${color};padding:2px 0">${icon} ${msg}</div>`;
+  box.innerHTML = `<div style="padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;max-height:160px;overflow-y:auto">${existing.replace(/<div[^>]*padding:12[^>]*>/,'').replace(/<\/div>$/,'')}${line}</div>`;
+  box.scrollTop = box.scrollHeight;
+}
+
+// ── Step 1: Save credentials ──────────────────────────────────
+function saveGoogleConfig() {
+  const clientId = document.getElementById('clientIdInput').value.trim();
+  const apiKey   = document.getElementById('apiKeyInput').value.trim();
+  if (!clientId || !apiKey) { showToast('Please enter both Client ID and API Key', 'error'); return; }
+
+  state.googleConfig = { clientId, apiKey };
+  localStorage.setItem('cs_google', JSON.stringify(state.googleConfig));
+
+  document.getElementById('setupStatus').innerHTML = '';
+  gLog('Credentials saved.', 'ok');
+  gLog(`Origin: ${location.origin} — make sure this is in your Google Console authorized origins!`, 'info');
+  showToast('Credentials saved! Click Connect in sidebar.', 'success');
+  loadGoogleLibraries();
+}
+
+// ── Step 2: Load both Google libraries ───────────────────────
+function loadGoogleLibraries() {
+  if (!state.googleConfig?.clientId) return;
+
+  if (typeof gapi === 'undefined' && !gapiLoading) {
+    gapiLoading = true;
+    gLog('Loading gapi…');
+    const s = document.createElement('script');
+    s.src = 'https://apis.google.com/js/api.js';
+    s.onload  = () => { gLog('gapi script loaded.'); gapi.load('client', onGapiClientLoaded); };
+    s.onerror = () => { gLog('Failed to load gapi — check your internet connection.', 'error'); gapiLoading = false; };
+    document.head.appendChild(s);
+  } else if (typeof gapi !== 'undefined' && !gapiReady && !gapiLoading) {
+    gapi.load('client', onGapiClientLoaded);
+  }
+
+  if ((typeof google === 'undefined' || !google.accounts) && !gisLoading) {
+    gisLoading = true;
+    gLog('Loading Google Identity Services…');
+    const s2 = document.createElement('script');
+    s2.src = 'https://accounts.google.com/gsi/client';
+    s2.onload  = () => { gLog('GIS script loaded.'); onGisLoaded(); };
+    s2.onerror = () => { gLog('Failed to load GIS — check your internet connection.', 'error'); gisLoading = false; };
+    document.head.appendChild(s2);
+  } else if (typeof google !== 'undefined' && google.accounts && !gisReady) {
+    onGisLoaded();
+  }
+}
+
+// ── Step 3a: Init gapi.client ────────────────────────────────
+async function onGapiClientLoaded() {
+  gLog('Initialising gapi.client…');
+  try {
+    await gapi.client.init({
+      apiKey: state.googleConfig.apiKey,
+      discoveryDocs: [GCAL_DISCOVERY],
+    });
+    gapiReady = true;
+    gapiLoading = false;
+    gLog('gapi.client ready ✓', 'ok');
+  } catch (err) {
+    gapiLoading = false;
+    const msg = err?.result?.error?.message || err?.message || JSON.stringify(err);
+    gLog('gapi init error: ' + msg, 'error');
+    if (msg.includes('API key')) gLog('→ Your API Key may be wrong or the Calendar API is not enabled.', 'error');
+    showToast('gapi init failed — see Setup tab for details', 'error');
+  }
+}
+
+// ── Step 3b: Init GIS token client ───────────────────────────
+function onGisLoaded() {
+  gLog('Initialising GIS token client…');
+  try {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: state.googleConfig.clientId,
+      scope: GCAL_SCOPES,
+      callback: onTokenResponse,
+      error_callback: (err) => {
+        const type = err?.type || '';
+        const msg  = err?.message || type || JSON.stringify(err);
+        gLog('GIS auth error: ' + msg, 'error');
+        if (type === 'popup_closed')          gLog('→ You closed the popup. Click Connect and complete sign-in.', 'error');
+        if (type === 'popup_failed_to_open')  gLog('→ Popup was blocked. Allow popups for localhost:8080.', 'error');
+        if (type === 'access_denied')         gLog('→ Access denied. Make sure your email is added as a Test User in Google Console → Audience.', 'error');
+        if (msg.includes('origin'))           gLog('→ Origin mismatch! Add "' + location.origin + '" to Authorized JS Origins in Google Console → Clients.', 'error');
+        showToast('Auth error: ' + msg, 'error');
+      },
+    });
+    gisReady   = true;
+    gisLoading = false;
+    gLog('GIS ready ✓', 'ok');
+    updateGoogleBtn();
+  } catch (err) {
+    gisLoading = false;
+    const msg = err?.message || JSON.stringify(err);
+    gLog('GIS init error: ' + msg, 'error');
+    if (msg.includes('client_id') || msg.includes('origin')) {
+      gLog('→ Check that your Client ID is correct AND "' + location.origin + '" is in Authorized JavaScript Origins.', 'error');
+    }
+    showToast('GIS init failed — see Setup tab for details', 'error');
+  }
+}
+
+// ── Step 4: Handle OAuth token ───────────────────────────────
+function onTokenResponse(resp) {
+  if (resp.error) {
+    gLog('Token error: ' + resp.error + (resp.error_description ? ' — ' + resp.error_description : ''), 'error');
+    if (resp.error === 'access_denied')    gLog('→ Add your email as a Test User in Google Console → Audience tab.', 'error');
+    if (resp.error === 'redirect_uri_mismatch') gLog('→ Add "' + location.origin + '" to Authorized JS Origins & Redirect URIs in Google Console → Clients.', 'error');
+    showToast('Google auth failed: ' + resp.error, 'error');
+    return;
+  }
+  gLog('Access token received ✓', 'ok');
+  state.googleConnected = true;
+  updateGoogleBtn();
+  // Clear all seed/demo events that have no googleId and weren't manually created
+  const before = state.events.length;
+  state.events = state.events.filter(e => e.manuallyCreated === true);
+  const cleared = before - state.events.length;
+  if (cleared > 0) gLog(`Cleared ${cleared} demo event(s) — loading your real calendar…`, 'ok');
+  saveState();
+  showToast('🎉 Google Calendar connected! Loading your events…', 'success');
+  syncGoogleCalendar();
+}
+
+// ── Step 5: Connect / Disconnect button ──────────────────────
+function handleGoogleAuth() {
+  if (state.googleConnected) {
+    try { google.accounts.oauth2.revoke(gapi.client.getToken()?.access_token, () => {}); } catch(e){}
+    try { gapi.client.setToken(null); } catch(e){}
+    state.googleConnected = false;
+    updateGoogleBtn();
+    showToast('Disconnected from Google Calendar', 'success');
+    return;
+  }
+
+  if (!state.googleConfig?.clientId) {
+    showView('setup');
+    showToast('Please add your Client ID & API Key in Settings first', 'error');
+    return;
+  }
+
+  // Load libraries if not yet done
+  loadGoogleLibraries();
+
+  if (!gapiReady || !gisReady) {
+    showToast('Google libraries still loading… please wait 3s and try again', 'error');
+    gLog('Not ready yet — gapiReady:' + gapiReady + ' gisReady:' + gisReady, 'error');
+    // Auto-retry once
+    setTimeout(() => {
+      if (gapiReady && gisReady) {
+        gLog('Libraries now ready, opening popup…', 'ok');
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+      } else {
+        gLog('Still not ready after 3s. Check your internet & credentials, then try again.', 'error');
+        showView('setup');
+      }
+    }, 3000);
+    return;
+  }
+
+  gLog('Opening Google sign-in popup…');
+  const existing = gapi.client.getToken();
+  tokenClient.requestAccessToken({ prompt: existing ? '' : 'consent' });
+}
+
+function updateGoogleBtn() {
+  const btn  = document.getElementById('googleConnectBtn');
+  const text = document.getElementById('googleBtnText');
+  if (!btn || !text) return;
+  if (state.googleConnected) {
+    btn.classList.add('connected');
+    text.textContent = '✓ Google Connected';
+  } else {
+    btn.classList.remove('connected');
+    text.textContent = 'Connect Google Calendar';
+  }
+}
+
+// ── Sync events from Google Calendar ─────────────────────────
+// Clears all non-manually-created events, then loads everything from Google
+function syncGoogleCalendar() {
+  if (!state.googleConnected || !gapiReady) return;
+  gLog('Syncing all events from Google Calendar…');
+
+  // Fetch a wide window: 30 days back to 1 year ahead
+  const timeMin = new Date();
+  timeMin.setDate(timeMin.getDate() - 30);
+  const timeMax = new Date();
+  timeMax.setFullYear(timeMax.getFullYear() + 1);
+
+  gapi.client.calendar.events.list({
+    calendarId: 'primary',
+    timeMin: timeMin.toISOString(),
+    timeMax: timeMax.toISOString(),
+    maxResults: 250,
+    singleEvents: true,
+    orderBy: 'startTime',
+  }).then(response => {
+    const items = response.result.items || [];
+
+    // Remove ALL seed/demo events (no googleId) and old synced events
+    // Keep only events the user manually created IN this app (has manuallyCreated flag)
+    state.events = state.events.filter(e => e.manuallyCreated === true);
+
+    // Add all Google Calendar events fresh
+    items.forEach(item => {
+      const dateStr = (item.start?.dateTime || item.start?.date || '').split('T')[0];
+      // Avoid duplicates if already added
+      if (!state.events.find(e => e.googleId === item.id)) {
+        state.events.push({
+          id: genId(),
+          googleId: item.id,
+          title: item.summary || 'Untitled',
+          date: dateStr,
+          start: item.start?.dateTime ? item.start.dateTime.split('T')[1].substring(0,5) : '',
+          end:   item.end?.dateTime   ? item.end.dateTime.split('T')[1].substring(0,5)   : '',
+          type: guessEventType(item),
+          color: googleColorToHex(item.colorId),
+          desc: item.description || '',
+          location: item.location || '',
+          attendees: (item.attendees || []).map(a => a.email).join(', '),
+          createdAt: new Date().toISOString(),
+        });
+      }
+    });
+
+    saveState(); renderAll();
+    gLog(`Loaded ${items.length} event(s) from Google Calendar.`, 'ok');
+    if (items.length === 0) {
+      showToast('Google Calendar connected — no upcoming events found', 'success');
+    } else {
+      showToast(`Synced ${items.length} events from Google Calendar!`, 'success');
+    }
+  }).catch(err => {
+    const msg = err?.result?.error?.message || err?.message || JSON.stringify(err);
+    gLog('Sync error: ' + msg, 'error');
+    if (msg.includes('401')) gLog('→ Token expired — click Connect again to re-authenticate.', 'error');
+    if (msg.includes('403')) gLog('→ Permission denied — make sure Calendar API is enabled & calendar scope was added in Data Access.', 'error');
+    showToast('Sync failed — check Setup tab for details', 'error');
+  });
+}
+
+// Guess event type from Google Calendar event data
+function guessEventType(item) {
+  const title = (item.summary || '').toLowerCase();
+  if (item.attendees && item.attendees.length > 1) return 'meeting';
+  if (title.includes('deadline') || title.includes('due') || title.includes('submit')) return 'deadline';
+  if (title.includes('remind') || title.includes('call') || title.includes('todo')) return 'reminder';
+  if (title.includes('focus') || title.includes('deep work') || title.includes('block')) return 'focus';
+  if (item.attendees && item.attendees.length === 0) return 'personal';
+  return 'meeting';
+}
+
+// Map Google Calendar colorId to hex
+function googleColorToHex(colorId) {
+  const map = {
+    '1':'#a4bdfc','2':'#7ae7bf','3':'#dbadff','4':'#ff887c',
+    '5':'#fbd75b','6':'#ffb878','7':'#46d6db','8':'#e1e1e1',
+    '9':'#5484ed','10':'#51b749','11':'#dc2127',
+  };
+  return map[colorId] || '#7c6bff';
+}
+
+// ── Push a new event to Google Calendar ──────────────────────
+function addToGoogleCalendar(event) {
+  if (!state.googleConnected || !gapiReady) return;
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const dt = (d, t) => t ? `${d}T${t}:00` : d;
+  gapi.client.calendar.events.insert({
+    calendarId: 'primary',
+    resource: {
+      summary: event.title, description: event.desc, location: event.location,
+      start: event.start ? { dateTime: dt(event.date, event.start), timeZone: tz } : { date: event.date },
+      end:   event.end   ? { dateTime: dt(event.date, event.end),   timeZone: tz } : { date: event.date },
+      attendees: event.attendees ? event.attendees.split(',').map(e=>({email:e.trim()})).filter(e=>e.email) : [],
+    },
+  }).then(() => { gLog('Event pushed to Google Calendar ✓', 'ok'); showToast('Added to Google Calendar! ✓', 'success'); })
+    .catch(err => { gLog('Insert error: ' + (err?.result?.error?.message || err?.message), 'error'); });
+}
+
+// ── Auto-load if config already saved ────────────────────────
+function tryLoadGoogleAPI() { loadGoogleLibraries(); }
+
+// ============================================================
+// UTILS
+// ============================================================
+function capitalize(s) { return s ? s[0].toUpperCase() + s.slice(1) : ''; }
+
+function showToast(msg, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${msg}`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+</script>
+</body>
+</html>
